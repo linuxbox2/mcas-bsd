@@ -2,9 +2,9 @@
 #ifndef __OSI_MCAS_OBJ_CACHE_H
 #define __OSI_MCAS_OBJ_CACHE_H
 
-#include "../mcas/portable_defns.h"
-#include "../mcas/ptst.h"
-#include "../mcas/gc.h"
+#include "portable_defns.h"
+#include "ptst.h"
+#include "gc.h"
 
 typedef int osi_mcas_obj_cache_t;
 
