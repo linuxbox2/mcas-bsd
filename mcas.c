@@ -40,6 +40,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#if 0
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "portable_defns.h"
+#endif
 
 typedef struct CasDescriptor CasDescriptor_t;
 typedef struct CasEntry CasEntry_t;
