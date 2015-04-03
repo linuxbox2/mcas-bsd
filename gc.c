@@ -430,11 +430,11 @@ static void gc_reclaim(void)
 				r_size = 0;
 
 				/* XXX: nonfatal, may be missing multiplier */
-				ch_head = ch;
+				ch_next = ch_head = ch;
 			    do {
 					r_len++;
-				} while (ch->next && (ch->next != ch_head)
-						 && (ch_next = ch->next));
+				} while ((ch_next = ch_next->next)
+					&& (ch_next != ch_head));
 
 				SUBSYS_LOG_MACRO(11, ("GC: return %d chunks of size %d to "
 							 "gc_global.alloc[%d]\n",
