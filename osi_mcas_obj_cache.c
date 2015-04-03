@@ -1,9 +1,13 @@
+#if !defined(SUBSYS_LOG_MACRO)
+#define SUBSYS_LOG_MACRO
+#else
 #include <afsconfig.h>
 #include <afs/param.h>
-#include "osi_mcas_obj_cache.h"
+#include <afs/afsutil.h>
 #include <osi/osi_includes.h>
 #include <osi/osi_types.h>
-#include <afs/afsutil.h>
+#endif
+#include "osi_mcas_obj_cache.h"
 
 void
 osi_mcas_obj_cache_create(osi_mcas_obj_cache_t * gc_id, size_t size,
@@ -32,12 +36,7 @@ osi_mcas_obj_cache_alloc(osi_mcas_obj_cache_t gc_id)
 
     SUBSYS_LOG_MACRO(11,
 			("GC: osi_mcas_obj_cache_alloc: block of size %d "
-#if OSI_DATAMODEL_IS(OSI_ILP32_ENV)
-			 "0x%lx"
-#else
-			 "0x%llx"
-#endif
-			 " (%s)\n",
+			 "%p (%s)\n",
 			 gc_get_blocksize(gc_id),
 			 obj,
 			 gc_get_tag(gc_id)));
@@ -52,12 +51,7 @@ osi_mcas_obj_cache_free(osi_mcas_obj_cache_t gc_id, void *obj)
 
     SUBSYS_LOG_MACRO(11,
 			("GC: osi_mcas_obj_cache_free: block of size %d "
-#if OSI_DATAMODEL_IS(OSI_ILP32_ENV)
-			 "0x%lx"
-#else
-			 "0x%llx"
-#endif
-			 " (%s)\n",
+			 "%p (%s)\n",
 			 gc_get_blocksize(gc_id),
 			 obj,
 			 gc_get_tag(gc_id)));
