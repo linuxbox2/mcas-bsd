@@ -44,12 +44,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 pthread_key_t ptst_key;
 ptst_t *ptst_list;
 
+#ifdef NEED_ID
 static unsigned int next_id;
+#endif
 
 ptst_t *critical_enter(void)
 {
     ptst_t *ptst, *next, *new_next;
+#ifdef NEED_ID
     unsigned int id, oid;
+#endif
 
     ptst = (ptst_t *)pthread_getspecific(ptst_key);
     if ( ptst == NULL )
@@ -70,9 +74,11 @@ ptst_t *critical_enter(void)
             ptst->gc = gc_init();
             rand_init(ptst);
             ptst->count = 1;
+#ifdef NEED_ID
             id = next_id;
             while ( (oid = CASIO(&next_id, id, id+1)) != id ) id = oid;
             ptst->id = id;
+#endif
             new_next = ptst_list;
             do {
                 ptst->next = next = new_next;
@@ -98,7 +104,9 @@ static void ptst_destructor(ptst_t *ptst)
 void _init_ptst_subsystem(void)
 {
     ptst_list = NULL;
+#ifdef NEED_ID
     next_id   = 0;
+#endif
     WMB();
     if ( pthread_key_create(&ptst_key, (void (*)(void *))ptst_destructor) )
     {

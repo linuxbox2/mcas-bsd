@@ -43,8 +43,10 @@ typedef struct ptst_st ptst_t;
 
 struct ptst_st
 {
+#ifdef NEED_ID
     /* Thread id */
     unsigned int id;
+#endif
 
     /* State management */
     ptst_t      *next;
