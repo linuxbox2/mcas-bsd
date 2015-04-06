@@ -224,13 +224,13 @@ static void delete_fixup(ptst_t *ptst, stm_tx *tx, set_t *s,
 }
 
 
-set_t *set_alloc(void)
+set_t *set_alloc(gc_global_t *gc_global)
 {
     ptst_t *ptst;
     set_t  *set;
     node_t *root;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     set = new_stm_blk(ptst, MEMORY);
 
@@ -247,7 +247,7 @@ set_t *set_alloc(void)
 }
 
 
-setval_t set_update(set_t *s, setkey_t k, setval_t v, int overwrite)
+setval_t set_update(gc_global_t *gc_global, set_t *s, setkey_t k, setval_t v, int overwrite)
 {
     ptst_t  *ptst;
     stm_tx  *tx;
@@ -259,7 +259,7 @@ setval_t set_update(set_t *s, setkey_t k, setval_t v, int overwrite)
 
     newb = NULL;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     do {
         new_stm_tx(tx, ptst, MEMORY);
@@ -394,7 +394,7 @@ setval_t set_update(set_t *s, setkey_t k, setval_t v, int overwrite)
 }
 
 
-setval_t set_remove(set_t *s, setkey_t k)
+setval_t set_remove(gc_global_t *gc_global, set_t *s, setkey_t k)
 {
     ptst_t  *ptst;
     stm_tx  *tx;
@@ -404,7 +404,7 @@ setval_t set_remove(set_t *s, setkey_t k)
 
     k = CALLER_TO_INTERNAL_KEY(k);
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     do {
         new_stm_tx(tx, ptst, MEMORY);
@@ -476,7 +476,7 @@ setval_t set_remove(set_t *s, setkey_t k)
 }
 
 
-setval_t set_lookup(set_t *s, setkey_t k)
+setval_t set_lookup(gc_global_t *gc_global, set_t *s, setkey_t k)
 {
     ptst_t  *ptst;
     stm_tx  *tx;
@@ -486,7 +486,7 @@ setval_t set_lookup(set_t *s, setkey_t k)
 
     k = CALLER_TO_INTERNAL_KEY(k);
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     do {
         new_stm_tx(tx, ptst, MEMORY);
@@ -512,12 +512,12 @@ setval_t set_lookup(set_t *s, setkey_t k)
 }
 
 
-void _init_set_subsystem(void)
+void _init_set_subsystem(gc_global_t *gc_global)
 {
     node_t *null;
     ptst_t *ptst;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     _init_stm_subsystem(0);
 

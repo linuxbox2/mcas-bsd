@@ -29,6 +29,8 @@
 #define SENTINEL_KEYMIN ( 1UL)
 #define SENTINEL_KEYMAX (~0UL)
 
+gc_global_t *gcglobal;
+
 typedef struct {
     unsigned long key;
     unsigned long secret_key;
@@ -258,7 +260,6 @@ do { \
     FASPO(&x, x-1);	\
 } while(0);
 
-
 int
 main(int argc, char **argv)
 {
@@ -270,8 +271,7 @@ main(int argc, char **argv)
     printf("Starting ADT Test\n");
 
     /* do this once, 1st thread */
-    _init_ptst_subsystem();
-    _init_gc_subsystem();
+    gcglobal = _init_gc_subsystem();
     _init_osi_cas_skip_subsystem();
 
     osi_mcas_obj_cache_create(&gc_id, sizeof(harness_ulong_t));

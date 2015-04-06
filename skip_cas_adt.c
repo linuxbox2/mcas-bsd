@@ -65,7 +65,6 @@ typedef struct {
  */
 
 typedef struct node_st node_t;
-typedef struct set_st osi_set_t;
 typedef VOLATILE node_t *sh_node_pt;
 
 struct node_st {
@@ -303,12 +302,12 @@ do_full_delete(ptst_t * ptst, osi_set_t * l, sh_node_pt x, int level)
  * Called once before any set operations, including set_alloc
  */
 void
-_init_osi_cas_skip_subsystem(void)
+_init_osi_cas_skip_subsystem(gc_global_t *gc_global)
 {
     int i;
 
     for (i = 0; i < NUM_LEVELS; i++) {
-		gc_id[i] = gc_add_allocator(sizeof(node_t) + i * sizeof(node_t *),
+		gc_id[i] = gc_add_allocator(gc_global, sizeof(node_t) + i * sizeof(node_t *),
 			"cas_skip_level");
     }
 }
@@ -345,7 +344,7 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
 
 
 setval_t
-osi_cas_skip_update(osi_set_t * l, setkey_t k, setval_t v, int overwrite)
+osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t v, int overwrite)
 {
     setval_t ov, new_ov;
     ptst_t *ptst;
@@ -353,7 +352,7 @@ osi_cas_skip_update(osi_set_t * l, setkey_t k, setval_t v, int overwrite)
     sh_node_pt pred, succ, new = NULL, new_next, old_next;
     int i, level;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     succ = weak_search_predecessors(l, k, preds, succs);
 
@@ -458,14 +457,14 @@ osi_cas_skip_update(osi_set_t * l, setkey_t k, setval_t v, int overwrite)
 }
 
 setval_t
-osi_cas_skip_remove(osi_set_t * l, setkey_t k)
+osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
 {
     setval_t v = NULL, new_v;
     ptst_t *ptst;
     sh_node_pt preds[NUM_LEVELS], x;
     int level, i;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     x = weak_search_predecessors(l, k, preds, NULL);
     if (compare_keys(l, x->k, k) > 0)
@@ -512,13 +511,13 @@ osi_cas_skip_remove(osi_set_t * l, setkey_t k)
 
 
 setval_t
-osi_cas_skip_lookup(osi_set_t * l, setkey_t k)
+osi_cas_skip_lookup(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
 {
     setval_t v = NULL;
     ptst_t *ptst;
     sh_node_pt x;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     x = weak_search_predecessors(l, k, NULL, NULL);
     if (compare_keys(l, x->k, k) == 0)
@@ -537,14 +536,14 @@ osi_cas_skip_lookup(osi_set_t * l, setkey_t k)
 /* Each-element function passed to set_for_each */
 typedef void (*osi_set_each_func) (osi_set_t * l, setval_t v, void *arg);
 void
-osi_cas_skip_for_each(osi_set_t * l, osi_set_each_func each_func, void *arg)
+osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func each_func, void *arg)
 {
     sh_node_pt x, y, x_next, old_x_next;
     setkey_t x_next_k;
     ptst_t *ptst;
     int i;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
 
     x = &l->head;
     for (i = NUM_LEVELS - 1; i >= 0; i--) {

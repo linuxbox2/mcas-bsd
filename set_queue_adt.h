@@ -87,10 +87,17 @@ do {                                                            \
 /* Read field @_f into variable @_x. */
 #define READ_FIELD(_x,_f) ((_x) = (_f))
 
+typedef struct set_st osi_set_t;
+
 #endif
 
+typedef struct set_st osi_set_t;
 
-#else
+#else /* __SET_IMPLEMENTATION__ */
+
+typedef void osi_set_t;		/* opaque */
+
+#endif /* __SET_IMPLEMENTATION__ */
 
 /*************************************
  * PUBLIC DEFINITIONS
@@ -105,15 +112,13 @@ do {                                                            \
 #define KEY_MIN  ( 0U)
 #define KEY_MAX  ((~0U) - 3)
 
-typedef void osi_set_t;		/* opaque */
-
 /* Set element comparison function */
 typedef int (*osi_set_cmp_func) (const void *lhs, const void *rhs);
 
 /* Each-element function passed to set_for_each */
 typedef void (*osi_set_each_func) (osi_set_t * l, setval_t v, void *arg);
 
-void _init_osi_cas_skip_subsystem(void);
+void _init_osi_cas_skip_subsystem(gc_global_t *);
 
 /*
  * Allocate an empty set.
@@ -133,19 +138,19 @@ osi_set_t *osi_cas_skip_alloc(int (*cmpf) (const void *, const void *));
  * modified, and the existing value is returned unchanged. It is possible
  * to see if the value was changed by observing if the return value is NULL.
  */
-setval_t osi_cas_skip_update(osi_set_t * s, setkey_t k, setval_t v,
-			     int overwrite);
+setval_t osi_cas_skip_update(gc_global_t *g, osi_set_t * s, setkey_t k,
+			     setval_t v, int overwrite);
 
 /*
  * Remove mapping for key @k from set @s. Return value associated with
  * removed mapping, or NULL is there was no mapping to delete.
  */
-setval_t osi_cas_skip_remove(osi_set_t * s, setkey_t k);
+setval_t osi_cas_skip_remove(gc_global_t *g, osi_set_t * s, setkey_t k);
 
 /*
  * Look up mapping for key @k in set @s. Return value if found, else NULL.
  */
-setval_t osi_cas_skip_lookup(osi_set_t * s, setkey_t k);
+setval_t osi_cas_skip_lookup(gc_global_t *g, osi_set_t * s, setkey_t k);
 
 
 /* Hybrid Set/Queue Operations (Matt) */
@@ -153,10 +158,8 @@ setval_t osi_cas_skip_lookup(osi_set_t * s, setkey_t k);
 /* Iterate over a sequential structure, calling callback_func
  * on each (undeleted) element visited.  Unordered.
  */
-void osi_cas_skip_for_each(osi_set_t * l, osi_set_each_func each_func,
-			   void *arg);
-
-#endif /* __SET_IMPLEMENTATION__ */
+void osi_cas_skip_for_each(gc_global_t *, osi_set_t * l,
+			   osi_set_each_func each_func, void *arg);
 
 
 #endif /* __SET_ADT_H__ */

@@ -87,7 +87,11 @@ do {                                                            \
 #endif
 
 
-#else
+#else /* __SET_IMPLEMENTATION__ */
+
+typedef void set_t;		/* opaque */
+
+#endif /* __SET_IMPLEMENTATION__ */
 
 /*************************************
  * PUBLIC DEFINITIONS
@@ -101,8 +105,6 @@ do {                                                            \
  */
 #define KEY_MIN  ( 0U)
 #define KEY_MAX  ((~0U) - 3)
-
-typedef void set_t;		/* opaque */
 
 /* Set element comparison function */
 typedef int (*osi_set_cmp_func) (const void *lhs, const void *rhs);
@@ -140,9 +142,5 @@ setval_t set_remove(set_t * s, setkey_t k);
  * Look up mapping for key @k in set @s. Return value if found, else NULL.
  */
 setval_t set_lookup(set_t * s, setkey_t k);
-
-
-#endif /* __SET_IMPLEMENTATION__ */
-
 
 #endif /* __SET_ADT_H__ */

@@ -33,14 +33,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef struct gc_st gc_t;
 
+typedef struct gc_global_st gc_global_t;
+
 /* Most of these functions peek into a per-thread state struct. */
 #include "ptst.h"
 
 /* Initialise GC section of given per-thread state structure. */
-gc_t *gc_init(void);
+gc_t *gc_init(gc_global_t *);
 
-int gc_add_allocator(int alloc_size, char *tag);
-void gc_remove_allocator(int alloc_id);
+int gc_add_allocator(gc_global_t *, int alloc_size, char *tag);
+void gc_remove_allocator(gc_global_t *, int alloc_id);
 
 /*
  * Memory allocate/free. An unsafe free can be used when an object was
@@ -55,8 +57,8 @@ void gc_unsafe_free(ptst_t *ptst, void *p, int alloc_id);
  * lists.
  */
 typedef void (*hook_fn_t)(ptst_t *, void *);
-int gc_add_hook(hook_fn_t fn);
-void gc_remove_hook(int hook_id);
+int gc_add_hook(gc_global_t *, hook_fn_t fn);
+void gc_remove_hook(gc_global_t *, int hook_id);
 void gc_add_ptr_to_hook_list(ptst_t *ptst, void *ptr, int hook_id);
 
 /* Per-thread entry/exit from critical regions */
@@ -64,7 +66,10 @@ void gc_enter(ptst_t *ptst);
 void gc_exit(ptst_t *ptst);
 
 /* Start-of-day initialisation of garbage collector. */
-void _init_gc_subsystem(void);
-void _destroy_gc_subsystem(void);
+gc_global_t * _init_gc_subsystem(void);
+void _destroy_gc_subsystem(gc_global_t *);
+
+char *gc_get_tag(gc_global_t *, int alloc_id);
+int gc_get_blocksize(gc_global_t *, int alloc_id);
 
 #endif /* __GC_H__ */

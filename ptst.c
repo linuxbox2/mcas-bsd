@@ -39,26 +39,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include "portable_defns.h"
 #include "ptst.h"
+#include "internal.h"
 
+ptst_t *ptst_first(gc_global_t *gc_global)
+{
+    return _ptst_first(gc_global);
+}
 
-pthread_key_t ptst_key;
-ptst_t *ptst_list;
-
-#ifdef NEED_ID
-static unsigned int next_id;
-#endif
-
-ptst_t *critical_enter(void)
+ptst_t *critical_enter(gc_global_t *gc_global)
 {
     ptst_t *ptst, *next, *new_next;
 #ifdef NEED_ID
     unsigned int id, oid;
 #endif
 
-    ptst = (ptst_t *)pthread_getspecific(ptst_key);
+    ptst = (ptst_t *)pthread_getspecific(gc_global->ptst_key);
     if ( ptst == NULL )
     {
-        for ( ptst = ptst_first(); ptst != NULL; ptst = ptst_next(ptst) )
+        for ( ptst = _ptst_first(gc_global); ptst != NULL; ptst = ptst_next(ptst) )
         {
             if ( (ptst->count == 0) && (CASIO(&ptst->count, 0, 1) == 0) )
             {
@@ -71,23 +69,23 @@ ptst_t *critical_enter(void)
             ptst = ALIGNED_ALLOC(sizeof(*ptst));
             if ( ptst == NULL ) exit(1);
             memset(ptst, 0, sizeof(*ptst));
-            ptst->gc = gc_init();
+            ptst->gc = gc_init(gc_global);
             rand_init(ptst);
             ptst->count = 1;
 #ifdef NEED_ID
-            id = next_id;
-            while ( (oid = CASIO(&next_id, id, id+1)) != id ) id = oid;
+            id = gc_global->next_id;
+            while ( (oid = CASIO(&gc_global->next_id, id, id+1)) != id ) id = oid;
             ptst->id = id;
 #endif
-            new_next = ptst_list;
+            new_next = gc_global->ptst_list;
             do {
                 ptst->next = next = new_next;
                 WMB_NEAR_CAS();
             }
-            while ( (new_next = CASPO(&ptst_list, next, ptst)) != next );
+            while ( (new_next = CASPO(&gc_global->ptst_list, next, ptst)) != next );
         }
 
-        pthread_setspecific(ptst_key, ptst);
+        pthread_setspecific(gc_global->ptst_key, ptst);
     }
 
     gc_enter(ptst);
@@ -101,15 +99,20 @@ static void ptst_destructor(ptst_t *ptst)
 }
 
 
-void _init_ptst_subsystem(void)
+void _init_ptst_subsystem(gc_global_t *gc_global)
 {
-    ptst_list = NULL;
+    int e;
+
+    gc_global->ptst_list = NULL;
 #ifdef NEED_ID
-    next_id   = 0;
+    gc_global->next_id   = 0;
 #endif
     WMB();
-    if ( pthread_key_create(&ptst_key, (void (*)(void *))ptst_destructor) )
+    if ( pthread_key_create(&gc_global->ptst_key, (void (*)(void *))ptst_destructor) )
     {
-        exit(1);
+#if !defined(KERNEL)
+	printf("MCAS can't make ptst key error=%d, aborting\n", e);
+#endif
+	abort();
     }
 }

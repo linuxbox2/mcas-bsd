@@ -56,21 +56,18 @@ struct ptst_st
     rand_t       rand;
 };
 
-extern pthread_key_t ptst_key;
-
 /*
  * Enter/leave a critical region. A thread gets a state handle for
  * use during critical regions.
  */
-ptst_t *critical_enter(void);
+ptst_t *critical_enter(gc_global_t *);
 #define critical_exit(_p) gc_exit(_p)
 
 /* Iterators */
-extern ptst_t *ptst_list;
-#define ptst_first()  (ptst_list)
+ptst_t * ptst_first(gc_global_t *);
 #define ptst_next(_p) ((_p)->next)
 
 /* Called once at start-of-day for entire application. */
-void _init_ptst_subsystem(void);
+void _init_ptst_subsystem(gc_global_t *);
 
 #endif /* __PTST_H__ */
