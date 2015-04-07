@@ -49,6 +49,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <assert.h>
 #include "portable_defns.h"
+#include "random.h"
+#include "gc.h"
 #include "ptst.h"
 #include "set_queue_adt.h"
 
