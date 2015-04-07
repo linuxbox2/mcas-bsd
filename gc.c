@@ -41,7 +41,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/mman.h>
 #include <unistd.h>
 #include "portable_defns.h"
+#include "random.h"
 #include "gc.h"
+#include "ptst.h"
 
 #if !defined(SUBSYS_LOG_MACRO)
 #define SUBSYS_LOG_MACRO
