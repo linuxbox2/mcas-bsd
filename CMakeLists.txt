@@ -57,11 +57,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLIKE_COMMON_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLIKE_COMMON_FLAGS} -std=c++14")
 
 list(APPEND libmcas_files
-	rb_stm.c ptst.c gc.c
-# mcas.c
-#	skip_mcas.c
+	ptst.c gc.c
 	osi_mcas_obj_cache.c
 	skip_cas_adt.c
+# not so useful,
+#	rb_stm.c mcas.c skip_mcas.c
 )
 
 add_library(libmcas_objs OBJECT ${libmcas_files})
