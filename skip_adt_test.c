@@ -19,10 +19,8 @@
 /* for mutex testing */
 #include <pthread.h>
 
-#include "portable_defns.h"
-#include "ptst.h"
-#include "set_queue_adt.h"
 #include "osi_mcas_obj_cache.h"
+#include "set_queue_adt.h"
 
 #define CREATE_N 1000000
 
