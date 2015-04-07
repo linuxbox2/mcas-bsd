@@ -34,7 +34,7 @@ find_package(Threads REQUIRED)
 set(MCAS_SHARED STATIC)
 
 
-set(CLIKE_COMMON_FLAGS "-fPIC -D_POSIX_C_SOURCE=200112L -D_SVID_SOURCE=1 -Dbool_t=int")
+set(CLIKE_COMMON_FLAGS "-fPIC -D_POSIX_C_SOURCE=200112L -D_SVID_SOURCE=1 -Dbool_t=int -pthread")
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
    set(CMAKE_CLIKE_FLAGS "${CMAKE_CLIKE_FLAGS} -DX86_64")
@@ -66,3 +66,17 @@ list(APPEND libmcas_files
 
 add_library(libmcas_objs OBJECT ${libmcas_files})
 add_library(mcas ${MCAS_SHARED} $<TARGET_OBJECTS:libmcas_objs>)
+
+set(skip_adt_test_srcs
+	skip_adt_test.c
+)
+add_executable(skip_adt_test ${skip_adt_test_srcs})
+target_link_libraries(skip_adt_test mcas)
+#
+# not useful: Matt says this rb has bugs, better implementations elsewhere
+#set(rb_stm_lock_srcs
+#	stm_lock.c
+#	set_harness.c
+#)
+#add_executable(rb_stm_lock ${rb_stm_lock_srcs})
+#target_link_libraries(rb_stm_lock mcas)
