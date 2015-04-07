@@ -36,11 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __PTST_H__
 #define __PTST_H__
 
-typedef struct ptst_st ptst_t;
-
-#include "gc.h"
-#include "random.h"
-
 struct ptst_st
 {
 #ifdef NEED_ID
@@ -55,13 +50,6 @@ struct ptst_st
     gc_t        *gc;
     rand_t       rand;
 };
-
-/*
- * Enter/leave a critical region. A thread gets a state handle for
- * use during critical regions.
- */
-ptst_t *critical_enter(gc_global_t *);
-#define critical_exit(_p) gc_exit(_p)
 
 /* Iterators */
 ptst_t * ptst_first(gc_global_t *);
