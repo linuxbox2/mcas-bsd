@@ -36,7 +36,15 @@ typedef struct gc_st gc_t;
 typedef struct gc_global_st gc_global_t;
 
 /* Most of these functions peek into a per-thread state struct. */
-#include "ptst.h"
+
+/*
+ * Enter/leave a critical region. A thread gets a state handle for
+ * use during critical regions.
+ * The next few things are the bits of ptst.h that need to be extern.
+ */
+typedef struct ptst_st ptst_t;
+ptst_t *critical_enter(gc_global_t *);
+#define critical_exit(_p) gc_exit(_p)
 
 /* Initialise GC section of given per-thread state structure. */
 gc_t *gc_init(gc_global_t *);
