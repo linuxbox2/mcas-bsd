@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <setjmp.h>
 #include <signal.h>
+#include "internal.h"
 
 typedef struct stm_blk_st stm_blk;
 typedef struct stm_tx_entry_st stm_tx_entry;
@@ -85,7 +86,6 @@ typedef struct {
 } priv_t;
 
 static priv_t priv_ptst[MAX_THREADS];
-static int gc_blk_id;  /* Allocation id for block descriptors. */
 static int do_padding; /* Should all allocations be padded to a cache line? */
 
 #define ALLOCATOR_SIZE(_s) (do_padding ? CACHE_LINE_SIZE : (_s))
@@ -121,16 +121,19 @@ static stm_tx_entry **search_stm_tx_entry(stm_tx_entry **pnext, stm_blk *b)
 
 stm *new_stm(ptst_t *ptst, int blk_size)
 {
+    gc_t *gc = ptst->gc;
+    gc_global_t *gc_global = gc->global;
+
     stm *mem = malloc(CACHE_LINE_SIZE);
     mem->blk_size = blk_size;
-    mem->gc_data_id = gc_add_allocator(ALLOCATOR_SIZE(blk_size));
+    mem->gc_data_id = gc_add_allocator(gc_global, ALLOCATOR_SIZE(blk_size), "stm");
     return mem;
 }
 
 
 void free_stm(ptst_t *ptst, stm *mem)
 {
-    gc_remove_allocator(mem->gc_data_id);
+    gc_remove_allocator(gc_global, mem->gc_data_id);
     free(mem);
 }
 
@@ -428,12 +431,13 @@ void remove_from_tx(ptst_t *ptst, stm_tx *t, stm_blk *b)
 }
 
 
+#if 0
 static void handle_fault(int sig)
 {
     ptst_t *ptst;
     stm_tx *t;
 
-    ptst = critical_enter();
+    ptst = critical_enter(gc_global);
     t = (stm_tx *)&priv_ptst[ptst->id];
     if ( DESCRIPTOR_IN_USE(t) && !validate_stm_tx(ptst, t) )
     {
@@ -447,18 +451,21 @@ static void handle_fault(int sig)
     fprintf(stderr, "Error: unhandleable SIGSEGV!\n");
     abort();
 }
+#endif
 
 
-void _init_stm_subsystem(int pad_data)
+void _init_stm_subsystem(gc_global_t *gc_global, int pad_data)
 {
     struct sigaction act;
 
     do_padding = pad_data;
-    gc_blk_id = gc_add_allocator(ALLOCATOR_SIZE(sizeof(stm_blk)));
+    gc_blk_id = gc_add_allocator(gc_global, ALLOCATOR_SIZE(sizeof(stm_blk)), "blk_id");
     memset(priv_ptst, 0, sizeof(priv_ptst));
 
+#if 0
     act.sa_handler = handle_fault;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     sigaction(SIGSEGV, &act, NULL);
+#endif
 }
