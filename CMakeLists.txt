@@ -29,28 +29,28 @@ link_directories(
 # )
 # include_directories(${PROJECT_BINARY_DIR}/include)
 
-find_package(Threads REQUIRED)
-
 set(MCAS_SHARED STATIC)
 
 
 set(CLIKE_COMMON_FLAGS "-fPIC -D_POSIX_C_SOURCE=200112L -D_SVID_SOURCE=1 -Dbool_t=int -pthread")
 
+# need logic to set Mcas_architecture to one of
+#	SPARC	sparc_defns
+#	SOLARIS_X86_686	solaris_x86_defns
+#	SOLARIS_X86_AMD64	solaris_amd64_defns
+#	INTEL	intel_defns
+#	X86_64	amd64_defns
+#	PPC	ppc_defns
+#	IA64	ia64_defns
+#	MIPS	mips_defns
+#	ALPHA	alpha_defns
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-   set(CMAKE_CLIKE_FLAGS "${CMAKE_CLIKE_FLAGS} -DX86_64")
+   set(Mcas_architecture X86_64)
+   set(Mcas_arch_header amd64_defns)
 endif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+set(CMAKE_CLIKE_FLAGS "${CMAKE_CLIKE_FLAGS} -D${Mcas_architecture}")
 
-# find out which platform we are building on
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(LINUX ON)
-  set(UNIX ON)
-  FIND_PACKAGE(Threads)
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
-# find out which platform we are building on
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-set(OperatingSystem "Mac OS X")
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+find_package(Threads REQUIRED)
 
 set(CLIKE_COMMON_FLAGS "${CLIKE_COMMON_FLAGS} ${CMAKE_CLIKE_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLIKE_COMMON_FLAGS} -std=c11")
@@ -64,8 +64,22 @@ list(APPEND libmcas_files
 #	rb_stm.c mcas.c skip_mcas.c
 )
 
+configure_file(
+	"${PROJECT_SOURCE_DIR}/mcas.h.in"
+	"${PROJECT_BINARY_DIR}/mcas.h"
+)
+
 add_library(libmcas_objs OBJECT ${libmcas_files})
 add_library(mcas ${MCAS_SHARED} $<TARGET_OBJECTS:libmcas_objs>)
+install(TARGETS mcas DESTINATION lib)
+install(FILES
+osi_mcas_obj_cache.h
+portable_defns.h
+set_queue_adt.h
+gc.h
+"${PROJECT_BINARY_DIR}/mcas.h"
+${Mcas_arch_header}.h
+DESTINATION include/mcas)
 
 set(skip_adt_test_srcs
 	skip_adt_test.c
