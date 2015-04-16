@@ -142,6 +142,9 @@ struct gc_global_st
     VOLATILE unsigned int total_size;
     VOLATILE unsigned int allocations;
 #endif
+
+    /* skiplist specifics.  need better way to store per-global stuff. */
+    int *gc_id;
 };
 
 /* internal interator for ptst_list */

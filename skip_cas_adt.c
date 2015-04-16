@@ -53,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gc.h"
 #include "ptst.h"
 #include "set_queue_adt.h"
+#include "internal.h"
 
 // todo:  get rid of me
 typedef struct {
@@ -89,8 +90,6 @@ struct set_st {
       CACHE_PAD(2);
 };
 
-static int gc_id[NUM_LEVELS];
-
 /*
  * PRIVATE FUNCTIONS
  */
@@ -125,8 +124,11 @@ alloc_node(ptst_t * ptst)
 {
     int l;
     node_t *n;
+    gc_t *gc = ptst->gc;
+    gc_global_t *gc_global = gc->global;
+
     l = get_level(ptst);
-    n = gc_alloc(ptst, gc_id[l - 1]);
+    n = gc_alloc(ptst, gc_global->gc_id[l - 1]);
     n->level = l;
     return (n);
 }
@@ -136,7 +138,10 @@ alloc_node(ptst_t * ptst)
 static void
 free_node(ptst_t * ptst, sh_node_pt n)
 {
-    gc_free(ptst, (void *)n, gc_id[(n->level & LEVEL_MASK) - 1]);
+return;
+    gc_t *gc = ptst->gc;
+    gc_global_t *gc_global = gc->global;
+    gc_free(ptst, (void *)n, gc_global->gc_id[(n->level & LEVEL_MASK) - 1]);
 }
 
 
@@ -292,7 +297,7 @@ do_full_delete(ptst_t * ptst, osi_set_t * l, sh_node_pt x, int level)
 #else
     (void)strong_search_predecessors(l, k, NULL, NULL);
 #endif
-    free_node(ptst, x);
+//    free_node(ptst, x);
 }
 
 
@@ -307,6 +312,17 @@ void
 _init_osi_cas_skip_subsystem(gc_global_t *gc_global)
 {
     int i;
+    int *gc_id, *a;
+
+    if (gc_global->gc_id) return;
+    gc_id = malloc(sizeof *gc_id * NUM_LEVELS);
+    memset(gc_id, 0, sizeof *gc_id * NUM_LEVELS);
+    a = 0;
+    a = CASPO(&gc_global->gc_id, a, gc_id);
+    if (a) {
+	free(gc_id);
+	return;
+    }
 
     for (i = 0; i < NUM_LEVELS; i++) {
 		gc_id[i] = gc_add_allocator(gc_global, sizeof(node_t) + i * sizeof(node_t *),
@@ -353,6 +369,7 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
     sh_node_pt preds[NUM_LEVELS], succs[NUM_LEVELS];
     sh_node_pt pred, succ, new = NULL, new_next, old_next;
     int i, level;
+int set_something = 0;
 
     ptst = critical_enter(gc_global);
 
@@ -374,13 +391,16 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
 	    }
 	} while (overwrite && ((new_ov = CASPO(&succ->v, ov, v)) != ov));
 
-	if (new != NULL)
+	if (new != NULL) {
+assert(!set_something);	// bad if this happened!
 	    free_node(ptst, new);
+	}
 	goto out;
     }
 #ifdef WEAK_MEM_ORDER
     /* Free node from previous attempt, if this is a retry. */
     if (new != NULL) {
+assert(!set_something);	// bad if this happened!
 	free_node(ptst, new);
 	new = NULL;
     }
@@ -401,6 +421,7 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
 
     /* We've committed when we've inserted at level 1. */
     WMB_NEAR_CAS();		/* make sure node fully initialised before inserting */
+set_something = 1;
     old_next = CASPO(&preds[0]->next[0], succ, new);
     if (old_next != succ) {
 	succ = strong_search_predecessors(l, k, preds, succs);
@@ -434,6 +455,7 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
 	       (compare_keys(l, succ->k, k) > 0));
 
 	/* Replumb predecessor's forward pointer. */
+set_something = i+1;
 	old_next = CASPO(&pred->next[i], succ, new);
 	if (old_next != succ) {
 	  new_world_view:
