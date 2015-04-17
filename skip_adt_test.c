@@ -80,7 +80,7 @@ harness_ulong_comp(const void *lhs, const void *rhs)
 }
 
 void
-test_each_func(osi_set_t * l, setval_t v, void *arg)
+test_each_func(osi_set_t * l, setval_t k, setval_t v, void *arg)
 {
 
     harness_ulong_t *z;
@@ -88,11 +88,15 @@ test_each_func(osi_set_t * l, setval_t v, void *arg)
     int traversal;
 
     traversal = *(int *)arg;
-    z = (harness_ulong_t *) v;
+    z = (harness_ulong_t *) k;
     gc_id = z->gc_id;
 
-    if (z->traversal == traversal)
+    if (z->traversal == traversal) {
+	// should never appear
+	printf("YELLOWJACKET key %d: secret key: %d (t: %d) \n",
+	       z->key, z->secret_key, z->traversal);
 	goto done;
+    }
 
     if (z->key % 10 == 0) {
 	printf("SPONGEBOB would delete key %d: secret key: %d (t: %d) \n",
@@ -110,17 +114,21 @@ test_each_func(osi_set_t * l, setval_t v, void *arg)
 }
 
 void
-test_each_func_2(osi_set_t * l, setval_t v, void *arg)
+test_each_func_2(osi_set_t * l, setval_t k, setval_t v, void *arg)
 {
 
     int traversal;
     harness_ulong_t *z;
 
     traversal = *(int *)arg;
-    z = (harness_ulong_t *) v;
+    z = (harness_ulong_t *) k;
 
-    if (z->traversal == traversal)
+    if (z->traversal == traversal) {
+	// should never appear
+	printf("ORANGECAKE key %d: secret key: %d (t: %d) \n",
+	       z->key, z->secret_key, z->traversal);
 	goto done;
+    }
 
     printf("SQUAREPANTS still here key %d: secret key: %d\n",
 	   z->key, z->secret_key);

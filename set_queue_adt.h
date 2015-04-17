@@ -116,7 +116,7 @@ typedef void osi_set_t;		/* opaque */
 typedef int (*osi_set_cmp_func) (const void *lhs, const void *rhs);
 
 /* Each-element function passed to set_for_each */
-typedef void (*osi_set_each_func) (osi_set_t * l, setval_t v, void *arg);
+typedef void (*osi_set_each_func) (osi_set_t * l, setval_t k, setval_t v, void *arg);
 
 void _init_osi_cas_skip_subsystem(gc_global_t *);
 

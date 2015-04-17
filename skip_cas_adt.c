@@ -138,7 +138,6 @@ alloc_node(ptst_t * ptst)
 static void
 free_node(ptst_t * ptst, sh_node_pt n)
 {
-return;
     gc_t *gc = ptst->gc;
     gc_global_t *gc_global = gc->global;
     gc_free(ptst, (void *)n, gc_global->gc_id[(n->level & LEVEL_MASK) - 1]);
@@ -297,7 +296,7 @@ do_full_delete(ptst_t * ptst, osi_set_t * l, sh_node_pt x, int level)
 #else
     (void)strong_search_predecessors(l, k, NULL, NULL);
 #endif
-//    free_node(ptst, x);
+    free_node(ptst, x);
 }
 
 
@@ -369,7 +368,6 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
     sh_node_pt preds[NUM_LEVELS], succs[NUM_LEVELS];
     sh_node_pt pred, succ, new = NULL, new_next, old_next;
     int i, level;
-int set_something = 0;
 
     ptst = critical_enter(gc_global);
 
@@ -379,6 +377,9 @@ int set_something = 0;
     ov = NULL;
 
     if (compare_keys(l, succ->k, k) == 0) {
+// if (new && new == succ) {
+// printf("%p already added: %p %p\n", pthread_self(), preds[0], succs[0]);
+// }
 	/* Already a @k node in the list: update its mapping. */
 	new_ov = succ->v;
 	do {
@@ -392,7 +393,6 @@ int set_something = 0;
 	} while (overwrite && ((new_ov = CASPO(&succ->v, ov, v)) != ov));
 
 	if (new != NULL) {
-assert(!set_something);	// bad if this happened!
 	    free_node(ptst, new);
 	}
 	goto out;
@@ -400,7 +400,6 @@ assert(!set_something);	// bad if this happened!
 #ifdef WEAK_MEM_ORDER
     /* Free node from previous attempt, if this is a retry. */
     if (new != NULL) {
-assert(!set_something);	// bad if this happened!
 	free_node(ptst, new);
 	new = NULL;
     }
@@ -421,7 +420,6 @@ assert(!set_something);	// bad if this happened!
 
     /* We've committed when we've inserted at level 1. */
     WMB_NEAR_CAS();		/* make sure node fully initialised before inserting */
-set_something = 1;
     old_next = CASPO(&preds[0]->next[0], succ, new);
     if (old_next != succ) {
 	succ = strong_search_predecessors(l, k, preds, succs);
@@ -448,14 +446,14 @@ set_something = 1;
 	}
 
 	/* Ensure we have unique key values at every level. */
-	if (compare_keys(l, succ->k, k) == 0)
+	if (compare_keys(l, succ->k, k) == 0) {
 	    goto new_world_view;
+	}
 
 	assert((compare_keys(l, pred->k, k) < 0) &&
 	       (compare_keys(l, succ->k, k) > 0));
 
 	/* Replumb predecessor's forward pointer. */
-set_something = i+1;
 	old_next = CASPO(&pred->next[i], succ, new);
 	if (old_next != succ) {
 	  new_world_view:
@@ -558,37 +556,35 @@ osi_cas_skip_lookup(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
  * on each (undeleted) element visited. */
 
 /* Each-element function passed to set_for_each */
-typedef void (*osi_set_each_func) (osi_set_t * l, setval_t v, void *arg);
 void
 osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func each_func, void *arg)
 {
     sh_node_pt x, y, x_next, old_x_next;
-    setkey_t x_next_k;
+    setkey_t x_next_k, x_next_v;
     ptst_t *ptst;
     int i;
 
     ptst = critical_enter(gc_global);
 
+    /* sufficient to visit nodes at level 0 - all must exist at that level */
     x = &l->head;
-    for (i = NUM_LEVELS - 1; i >= 0; i--) {
-	/* must revisit x at each level to see all
-	 * nodes in the structure */
-	y = x;
+    y = x;
+    for (;;) {
+	READ_FIELD(x_next, y->next[0]);
+	x_next = get_unmarked_ref(x_next);
 
-	for (;;) {
-	    READ_FIELD(x_next, y->next[i]);
-	    x_next = get_unmarked_ref(x_next);
+	READ_FIELD(x_next_k, x_next->k);
+	if (x_next_k == (setkey_t) SENTINEL_KEYMAX)
+	    break;
+	READ_FIELD(x_next_v, x_next->v);
 
-	    READ_FIELD(x_next_k, x_next->k);
-	    if (x_next_k == (setkey_t) SENTINEL_KEYMAX)
-		break;
-
-	    /* in our variation, a (stored) k is a v,
-	     * ie, x_next_k is x_next_v */
-	    each_func(l, x_next_k, arg);
-
-	    y = x_next;
+	/* in our variation, a (stored) k is a v,
+	 * ie, x_next_k is x_next_v */
+	if (x_next_v) {		/* if deleted, don't report it */
+		each_func(l, x_next_k, x_next_v, arg);
 	}
+
+	y = x_next;
     }
 
     critical_exit(ptst);
