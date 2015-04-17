@@ -57,6 +57,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MB_NEAR_CAS
 #define RMB_NEAR_CAS() RMB()
 #define WMB_NEAR_CAS() WMB()
@@ -324,7 +328,7 @@ typedef struct mrsw_qnode_st mrsw_qnode_t;
 struct mrsw_qnode_st {
 #define CLS_RD 0
 #define CLS_WR 1
-    int class;
+    int qclass;
 #define ST_NOSUCC   0
 #define ST_RDSUCC   1
 #define ST_WRSUCC   2
@@ -352,7 +356,7 @@ static void rd_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
 {
     mrsw_qnode_t *pred, *next;
 
-    qn->class = CLS_RD;
+    qn->qclass = CLS_RD;
     qn->next  = NULL;
     qn->state = ST_NOSUCC | ST_BLOCKED;
 
@@ -367,7 +371,7 @@ static void rd_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     }
     else
     {
-        if ( (pred->class == CLS_WR) ||
+        if ( (pred->qclass == CLS_WR) ||
              (CASIO(&pred->state, ST_BLOCKED|ST_NOSUCC, ST_BLOCKED|ST_RDSUCC)
               == (ST_BLOCKED|ST_NOSUCC)) )
         {
@@ -437,7 +441,7 @@ static void wr_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     mrsw_qnode_t *pred;
     int os, s;
 
-    qn->class = CLS_WR;
+    qn->qclass = CLS_WR;
     qn->next  = NULL;
     qn->state = ST_NOSUCC | ST_BLOCKED;
 
@@ -480,7 +484,7 @@ static void wr_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     {
         while ( (next = qn->next) == NULL ) RMB();
         WEAK_DEP_ORDER_MB();
-        if ( next->class == CLS_RD )
+        if ( next->qclass == CLS_RD )
         {
             ADD_TO(lock->reader_count, 1);
             WMB();
@@ -489,5 +493,8 @@ static void wr_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     }
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PORTABLE_DEFNS_H__ */
