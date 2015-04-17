@@ -24,9 +24,6 @@
 
 #define CREATE_N 1000000
 
-#define SENTINEL_KEYMIN ( 1UL)
-#define SENTINEL_KEYMAX (~0UL)
-
 gc_global_t *gc_global;
 
 typedef struct {
@@ -60,14 +57,14 @@ harness_ulong_comp(const void *lhs, const void *rhs)
     /* todo:  move to wrapper macro outside
      * cmpf */
 
-    if (lhs == (void *)SENTINEL_KEYMAX)
+    if (lhs == SENTINEL_KEYMAX)
 	return (1);
-    if (rhs == (void *)SENTINEL_KEYMAX)
+    if (rhs == SENTINEL_KEYMAX)
 	return (-1);
 
-    if (lhs == (void *)SENTINEL_KEYMIN)
+    if (lhs == SENTINEL_KEYMIN)
 	return (-1);
-    if (rhs == (void *)SENTINEL_KEYMIN)
+    if (rhs == SENTINEL_KEYMIN)
 	return (1);
     /* end todo */
 

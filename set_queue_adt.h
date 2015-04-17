@@ -50,6 +50,14 @@ typedef void *setkey_t;
 typedef void *setval_t;
 
 
+/* Internally used key values with special meanings. */
+/* any calling code has to at least
+ *   understand KEYMIN and KEYMAX.
+ */
+#define INVALID_FIELD   (0)		/* Uninitialised field value.     */
+#define SENTINEL_KEYMIN ((void*)(1UL))	/* Key value of first dummy node. */
+#define SENTINEL_KEYMAX ((void*)(~0UL))	/* Key value of last dummy node.  */
+
 #ifdef __SET_IMPLEMENTATION__
 
 
@@ -60,13 +68,6 @@ typedef void *setval_t;
 /* Fine for 2^NUM_LEVELS nodes. */
 #define NUM_LEVELS 20
 //#define NUM_LEVELS 19
-
-
-/* Internal key values with special meanings. */
-#define INVALID_FIELD   (0)	/* Uninitialised field value.     */
-#define SENTINEL_KEYMIN ( 1UL)	/* Key value of first dummy node. */
-#define SENTINEL_KEYMAX (~0UL)	/* Key value of last dummy node.  */
-
 
 /*
  * SUPPORT FOR WEAK ORDERING OF MEMORY ACCESSES

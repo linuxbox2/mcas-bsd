@@ -339,7 +339,7 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
 
     n = malloc(sizeof(*n) + (NUM_LEVELS - 1) * sizeof(node_t *));
     memset(n, 0, sizeof(*n) + (NUM_LEVELS - 1) * sizeof(node_t *));
-    n->k = (setkey_t *) SENTINEL_KEYMAX;
+    n->k = SENTINEL_KEYMAX;
 
     /*
      * Set the forward pointers of final node to other than NULL,
@@ -350,7 +350,7 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
 
     l = malloc(sizeof(*l) + (NUM_LEVELS - 1) * sizeof(node_t *));
     l->cmpf = cmpf;
-    l->head.k = (setkey_t *) SENTINEL_KEYMIN;
+    l->head.k = SENTINEL_KEYMIN;
     l->head.level = NUM_LEVELS;
     for (i = 0; i < NUM_LEVELS; i++) {
 	l->head.next[i] = n;
@@ -574,7 +574,7 @@ osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func e
 	x_next = get_unmarked_ref(x_next);
 
 	READ_FIELD(x_next_k, x_next->k);
-	if (x_next_k == (setkey_t) SENTINEL_KEYMAX)
+	if (x_next_k == SENTINEL_KEYMAX)
 	    break;
 	READ_FIELD(x_next_v, x_next->v);
 
