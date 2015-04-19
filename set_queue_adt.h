@@ -46,6 +46,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __SET_ADT_H__
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void *setkey_t;
 typedef void *setval_t;
 
@@ -162,5 +166,9 @@ setval_t osi_cas_skip_lookup(gc_global_t *g, osi_set_t * s, setkey_t k);
 void osi_cas_skip_for_each(gc_global_t *, osi_set_t * l,
 			   osi_set_each_func each_func, void *arg);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SET_ADT_H__ */

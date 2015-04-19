@@ -31,6 +31,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __GC_H__
 #define __GC_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct gc_st gc_t;
 
 typedef struct gc_global_st gc_global_t;
@@ -79,5 +83,9 @@ void _destroy_gc_subsystem(gc_global_t *);
 
 char *gc_get_tag(gc_global_t *, int alloc_id);
 int gc_get_blocksize(gc_global_t *, int alloc_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __GC_H__ */

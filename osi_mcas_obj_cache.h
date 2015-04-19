@@ -5,6 +5,10 @@
 #include "portable_defns.h"
 #include "gc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int osi_mcas_obj_cache_t;
 
 /* Create a new MCAS GC pool, and return its identifier, which
@@ -22,5 +26,9 @@ void osi_mcas_obj_cache_free(gc_global_t *, osi_mcas_obj_cache_t, void *);
 
 /* Terminate an MCAS GC pool */
 void osi_mcas_obj_cache_destroy(osi_mcas_obj_cache_t gc_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __OSI_MCAS_OBJ_CACHE_H */
