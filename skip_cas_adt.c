@@ -86,8 +86,9 @@ struct set_st {
     CACHE_PAD(0);
     osi_set_cmp_func cmpf;
       CACHE_PAD(1);
-    node_t head;
+    node_t *tail;
       CACHE_PAD(2);
+    node_t head;
 };
 
 /*
@@ -179,6 +180,7 @@ strong_search_predecessors(osi_set_t * l, setkey_t k, sh_node_pt * pa,
 		y = get_unmarked_ref(y_next);
 	    }
 
+	    if (y == l->tail) break;
 	    READ_FIELD(y_k, y->k);
 	    if (compare_keys(l, y_k, k) >= 0)
 		break;
@@ -220,6 +222,7 @@ weak_search_predecessors(osi_set_t * l, setkey_t k, sh_node_pt * pa,
 	    READ_FIELD(x_next, x->next[i]);
 	    x_next = get_unmarked_ref(x_next);
 
+	    if (x_next == l->tail) break;
 	    READ_FIELD(x_next_k, x_next->k);
 	    if (compare_keys(l, x_next_k, k) >= 0)
 		break;
@@ -285,7 +288,9 @@ do_full_delete(ptst_t * ptst, osi_set_t * l, sh_node_pt x, int level)
 	RMB();
     while (i > 0) {
 	node_t *n = get_unmarked_ref(preds[i]->next[i]);
-	while (compare_keys(l, n->k, k) < 0) {
+	for (;;) {
+	    if (n == l->tail) break;
+	    if (compare_keys(l, n->k, k) >= 0) break;
 	    n = get_unmarked_ref(n->next[i]);
 	    RMB();		/* we don't want refs to @x to "disappear" */
 	}
@@ -335,9 +340,13 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
 {
     osi_set_t *l;
     node_t *n;
+    char *cp;
     int i;
 
-    n = malloc(sizeof(*n) + (NUM_LEVELS - 1) * sizeof(node_t *));
+    cp = malloc(sizeof(*l) + (NUM_LEVELS - 1) * sizeof(node_t *)
+		+ sizeof(*n) + (NUM_LEVELS - 1) * sizeof(node_t *));
+    n = (node_t *) (cp + sizeof(*l) + (NUM_LEVELS - 1) * sizeof(node_t *));
+    l = (osi_set_t *) (cp);
     memset(n, 0, sizeof(*n) + (NUM_LEVELS - 1) * sizeof(node_t *));
     n->k = SENTINEL_KEYMAX;
 
@@ -348,7 +357,7 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
      */
     memset(n->next, 0xfe, NUM_LEVELS * sizeof(node_t *));
 
-    l = malloc(sizeof(*l) + (NUM_LEVELS - 1) * sizeof(node_t *));
+    l->tail = n;
     l->cmpf = cmpf;
     l->head.k = SENTINEL_KEYMIN;
     l->head.level = NUM_LEVELS;
@@ -376,7 +385,7 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
   retry:
     ov = NULL;
 
-    if (compare_keys(l, succ->k, k) == 0) {
+    if (succ != l->tail && compare_keys(l, succ->k, k) == 0) {
 // if (new && new == succ) {
 // printf("%p already added: %p %p\n", pthread_self(), preds[0], succs[0]);
 // }
@@ -446,12 +455,13 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
 	}
 
 	/* Ensure we have unique key values at every level. */
-	if (compare_keys(l, succ->k, k) == 0) {
+	if (succ != l->tail && compare_keys(l, succ->k, k) == 0) {
 	    goto new_world_view;
 	}
 
-	assert((compare_keys(l, pred->k, k) < 0) &&
-	       (compare_keys(l, succ->k, k) > 0));
+	assert( pred != l->tail && succ != &l->head &&
+		( pred == &l->head || compare_keys(l, pred->k, k) < 0) &&
+	       ( succ == l->tail || compare_keys(l, succ->k, k) > 0));
 
 	/* Replumb predecessor's forward pointer. */
 	old_next = CASPO(&pred->next[i], succ, new);
@@ -489,7 +499,7 @@ osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
     ptst = critical_enter(gc_global);
 
     x = weak_search_predecessors(l, k, preds, NULL);
-    if (compare_keys(l, x->k, k) > 0)
+    if (x == l->tail || compare_keys(l, x->k, k) > 0)
 	goto out;
 
     READ_FIELD(level, x->level);
@@ -542,7 +552,7 @@ osi_cas_skip_lookup(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
     ptst = critical_enter(gc_global);
 
     x = weak_search_predecessors(l, k, NULL, NULL);
-    if (compare_keys(l, x->k, k) == 0)
+    if (x != l->tail && compare_keys(l, x->k, k) == 0)
 	READ_FIELD(v, x->v);
 
     critical_exit(ptst);

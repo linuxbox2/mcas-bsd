@@ -54,6 +54,7 @@ harness_ulong_comp(const void *lhs, const void *rhs)
     l = (harness_ulong_t *) lhs;
     r = (harness_ulong_t *) rhs;
 
+#if 0
     /* todo:  move to wrapper macro outside
      * cmpf */
 
@@ -67,6 +68,7 @@ harness_ulong_comp(const void *lhs, const void *rhs)
     if (rhs == SENTINEL_KEYMIN)
 	return (1);
     /* end todo */
+#endif
 
     if (l->key == r->key)
 	return (0);
