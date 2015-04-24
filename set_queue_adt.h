@@ -136,6 +136,11 @@ void _init_osi_cas_skip_subsystem(gc_global_t *);
 osi_set_t *osi_cas_skip_alloc(int (*cmpf) (const void *, const void *));
 
 /*
+ * Remove a set.  Caller is responsible for making sure it's not in use.
+ */
+void osi_cas_skip_free(gc_global_t *, osi_set_t *);
+
+/*
  * Add mapping (@k -> @v) into set @s. Return previous mapped value if
  * one existed, or NULL if no previous mapping for @k existed.
  *
