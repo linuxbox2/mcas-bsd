@@ -53,7 +53,7 @@ ptst_t *critical_enter(gc_global_t *);
 /* Initialise GC section of given per-thread state structure. */
 gc_t *gc_init(gc_global_t *);
 
-int gc_add_allocator(gc_global_t *, int alloc_size, char *tag);
+int gc_add_allocator(gc_global_t *, int alloc_size, const char *tag);
 void gc_remove_allocator(gc_global_t *, int alloc_id);
 
 /*
@@ -81,7 +81,7 @@ void gc_exit(ptst_t *ptst);
 gc_global_t * _init_gc_subsystem(void);
 void _destroy_gc_subsystem(gc_global_t *);
 
-char *gc_get_tag(gc_global_t *, int alloc_id);
+const char *gc_get_tag(gc_global_t *, int alloc_id);
 int gc_get_blocksize(gc_global_t *, int alloc_id);
 
 #ifdef __cplusplus

@@ -397,7 +397,7 @@ gc_get_blocksize(gc_global_t *gc_global, int alloc_id)
     return (gc_global->blk_sizes[alloc_id]);
 }
 
-char *
+const char *
 gc_get_tag(gc_global_t *gc_global, int alloc_id)
 {
     return (gc_global->tags[alloc_id]);
@@ -576,7 +576,7 @@ gc_t *gc_init(gc_global_t *gc_global)
 
 
 int
-gc_add_allocator(gc_global_t *gc_global, int alloc_size, char *tag)
+gc_add_allocator(gc_global_t *gc_global, int alloc_size, const char *tag)
 {
     int ni, i;
 

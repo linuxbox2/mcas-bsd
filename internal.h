@@ -114,7 +114,7 @@ struct gc_global_st
     int blk_sizes[MAX_SIZES];
 
     /* tags (trace support) */
-    char *tags[MAX_SIZES];
+    const char *tags[MAX_SIZES];
 
     /* Registered epoch hooks. */
     int nr_hooks;

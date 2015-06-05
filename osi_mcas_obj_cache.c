@@ -12,7 +12,7 @@
 void
 osi_mcas_obj_cache_create(gc_global_t *gc_global,
 	osi_mcas_obj_cache_t * gc_id, size_t size,
-	char *tag)
+	const char *tag)
 {
     SUBSYS_LOG_MACRO(7,
 	    ("osi_mcas_obj_cache_create: size, adjsize %d\n", size,
