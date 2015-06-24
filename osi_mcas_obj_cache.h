@@ -19,10 +19,12 @@ void osi_mcas_obj_cache_create(gc_global_t *, osi_mcas_obj_cache_t *,
 /* Allocate an object from the pool identified by
  * gc_id */
 void *osi_mcas_obj_cache_alloc(gc_global_t *, osi_mcas_obj_cache_t);
+void *osi_mcas_obj_cache_alloc_critical(ptst_t *, osi_mcas_obj_cache_t);
 
 /* Release object obj to its GC pool, identified by
  * gc_id */
 void osi_mcas_obj_cache_free(gc_global_t *, osi_mcas_obj_cache_t, void *);
+void osi_mcas_obj_cache_free_alloc(ptst_t *, osi_mcas_obj_cache_t, void *);
 
 /* Terminate an MCAS GC pool */
 void osi_mcas_obj_cache_destroy(osi_mcas_obj_cache_t gc_id);

@@ -8,6 +8,9 @@
 #include <osi/osi_types.h>
 #endif
 #include "osi_mcas_obj_cache.h"
+#include "internal.h"
+#include "random.h"
+#include "ptst.h"
 
 void
 osi_mcas_obj_cache_create(gc_global_t *gc_global,
@@ -22,14 +25,12 @@ osi_mcas_obj_cache_create(gc_global_t *gc_global,
 }
 
 void *
-osi_mcas_obj_cache_alloc(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id)
+osi_mcas_obj_cache_alloc_critical(ptst_t *ptst, osi_mcas_obj_cache_t gc_id)
 {
-    ptst_t *ptst;
+    gc_global_t *gc_global = ptst->gc->global;
     void *obj;
 
-    ptst = critical_enter(gc_global);
     obj = (void *)gc_alloc(ptst, gc_id);
-    critical_exit(ptst);
 
     SUBSYS_LOG_MACRO(11,
 			("GC: osi_mcas_obj_cache_alloc: block of size %d "
@@ -41,10 +42,24 @@ osi_mcas_obj_cache_alloc(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id)
     return (obj);
 }
 
-void
-osi_mcas_obj_cache_free(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id, void *obj)
+void *
+osi_mcas_obj_cache_alloc(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id)
 {
     ptst_t *ptst;
+    void *obj;
+
+    ptst = critical_enter(gc_global);
+    obj = osi_mcas_obj_cache_alloc_critical(ptst, gc_id);
+    obj = (void *)gc_alloc(ptst, gc_id);
+    critical_exit(ptst);
+
+    return (obj);
+}
+
+void
+osi_mcas_obj_cache_free_critical(ptst_t *ptst, osi_mcas_obj_cache_t gc_id, void *obj)
+{
+    gc_global_t *gc_global = ptst->gc->global;
 
     SUBSYS_LOG_MACRO(11,
 			("GC: osi_mcas_obj_cache_free: block of size %d "
@@ -53,8 +68,16 @@ osi_mcas_obj_cache_free(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id, void
 			 obj,
 			 gc_get_tag(gc_global, gc_id)));
 
-    ptst = critical_enter(gc_global);
     gc_free(ptst, (void *)obj, gc_id);
+}
+
+void
+osi_mcas_obj_cache_free(gc_global_t *gc_global, osi_mcas_obj_cache_t gc_id, void *obj)
+{
+    ptst_t *ptst;
+
+    ptst = critical_enter(gc_global);
+    osi_mcas_obj_cache_free_critical(ptst, gc_id, obj);
     critical_exit(ptst);
 }
 

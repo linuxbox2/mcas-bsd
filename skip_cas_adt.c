@@ -370,14 +370,14 @@ osi_cas_skip_alloc(osi_set_cmp_func cmpf)
 
 
 void
-osi_cas_skip_free(gc_global_t *gc_global, osi_set_t *l)
+osi_cas_skip_free_critical(ptst_t *ptst, osi_set_t *l)
 {
+    gc_global_t *gc_global = ptst->gc->global;
+
     setval_t v, new_v;
     sh_node_pt n;
     int i, level;
-    ptst_t *ptst;
 
-    ptst = critical_enter(gc_global);
     gc_t *gc = ptst->gc;
     while ((n = l->head.next[0]) != l->tail) {
 	READ_FIELD(level, n->level);
@@ -407,6 +407,15 @@ osi_cas_skip_free(gc_global_t *gc_global, osi_set_t *l)
 	}
     }
   out:
+    ;
+}
+
+
+void
+osi_cas_skip_free(gc_global_t *gc_global, osi_set_t *l)
+{
+    ptst_t *ptst = critical_enter(gc_global);
+    osi_cas_skip_free_critical(ptst, l);
     critical_exit(ptst);
     ptst = critical_enter(gc_global);
     critical_exit(ptst);
@@ -416,15 +425,13 @@ osi_cas_skip_free(gc_global_t *gc_global, osi_set_t *l)
 
 
 setval_t
-osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t v, int overwrite)
+osi_cas_skip_update_critical(ptst_t *ptst, osi_set_t * l, setkey_t k, setval_t v, int overwrite)
 {
+    gc_global_t *gc_global = ptst->gc->global;
     setval_t ov, new_ov;
-    ptst_t *ptst;
     sh_node_pt preds[NUM_LEVELS], succs[NUM_LEVELS];
     sh_node_pt pred, succ, new = NULL, new_next, old_next;
     int i, level;
-
-    ptst = critical_enter(gc_global);
 
     succ = weak_search_predecessors(l, k, preds, succs);
 
@@ -530,19 +537,26 @@ osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t 
 	do_full_delete(ptst, l, new, level - 1);
     }
   out:
+    return (ov);
+}
+
+
+setval_t
+osi_cas_skip_update(gc_global_t *gc_global, osi_set_t * l, setkey_t k, setval_t v, int overwrite)
+{
+    ptst_t *ptst = critical_enter(gc_global);
+    setval_t ov = osi_cas_skip_update_critical(ptst, l, k, v, overwrite);
     critical_exit(ptst);
     return (ov);
 }
 
 setval_t
-osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
+osi_cas_skip_remove_critical(ptst_t *ptst, osi_set_t * l, setkey_t k)
 {
+    gc_global_t *gc_global = ptst->gc->global;
     setval_t v = NULL, new_v;
-    ptst_t *ptst;
     sh_node_pt preds[NUM_LEVELS], x;
     int level, i;
-
-    ptst = critical_enter(gc_global);
 
     x = weak_search_predecessors(l, k, preds, NULL);
     if (x == l->tail || compare_keys(l, x->k, k) > 0)
@@ -583,7 +597,30 @@ osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
     free_node(ptst, x);
 
   out:
+    return (v);
+}
+
+setval_t
+osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
+{
+    ptst_t *ptst = critical_enter(gc_global);
+    setval_t v = osi_cas_skip_remove_critical(ptst, l, k);
     critical_exit(ptst);
+    return (v);
+}
+
+
+setval_t
+osi_cas_skip_lookup_critical(ptst_t *ptst, osi_set_t * l, setkey_t k)
+{
+    gc_global_t *gc_global = ptst->gc->global;
+    setval_t v = NULL;
+    sh_node_pt x;
+
+    x = weak_search_predecessors(l, k, NULL, NULL);
+    if (x != l->tail && compare_keys(l, x->k, k) == 0)
+	READ_FIELD(v, x->v);
+
     return (v);
 }
 
@@ -591,16 +628,8 @@ osi_cas_skip_remove(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
 setval_t
 osi_cas_skip_lookup(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
 {
-    setval_t v = NULL;
-    ptst_t *ptst;
-    sh_node_pt x;
-
-    ptst = critical_enter(gc_global);
-
-    x = weak_search_predecessors(l, k, NULL, NULL);
-    if (x != l->tail && compare_keys(l, x->k, k) == 0)
-	READ_FIELD(v, x->v);
-
+    ptst_t *ptst = critical_enter(gc_global);
+    setval_t v = osi_cas_skip_lookup_critical(ptst, l, k);
     critical_exit(ptst);
     return (v);
 }
@@ -613,14 +642,12 @@ osi_cas_skip_lookup(gc_global_t *gc_global, osi_set_t * l, setkey_t k)
 
 /* Each-element function passed to set_for_each */
 void
-osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func each_func, void *arg)
+osi_cas_skip_for_each_critical(ptst_t *ptst, osi_set_t * l, osi_set_each_func each_func, void *arg)
 {
+    gc_global_t *gc_global = ptst->gc->global;
     sh_node_pt x, y, x_next, old_x_next;
     setkey_t x_next_k, x_next_v;
-    ptst_t *ptst;
     int i;
-
-    ptst = critical_enter(gc_global);
 
     /* sufficient to visit nodes at level 0 - all must exist at that level */
     x = &l->head;
@@ -642,6 +669,12 @@ osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func e
 
 	y = x_next;
     }
+}
 
+void
+osi_cas_skip_for_each(gc_global_t *gc_global, osi_set_t * l, osi_set_each_func each_func, void *arg)
+{
+    ptst_t *ptst = critical_enter(gc_global);
+    osi_cas_skip_for_each_critical(ptst, l, each_func, arg);
     critical_exit(ptst);
 }

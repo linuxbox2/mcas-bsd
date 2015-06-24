@@ -139,6 +139,7 @@ osi_set_t *osi_cas_skip_alloc(int (*cmpf) (const void *, const void *));
  * Remove a set.  Caller is responsible for making sure it's not in use.
  */
 void osi_cas_skip_free(gc_global_t *, osi_set_t *);
+void osi_cas_skip_free_critical(ptst_t *, osi_set_t *);
 
 /*
  * Add mapping (@k -> @v) into set @s. Return previous mapped value if
@@ -150,17 +151,21 @@ void osi_cas_skip_free(gc_global_t *, osi_set_t *);
  */
 setval_t osi_cas_skip_update(gc_global_t *g, osi_set_t * s, setkey_t k,
 			     setval_t v, int overwrite);
+setval_t osi_cas_skip_update_critical(ptst_t *p, osi_set_t * s, setkey_t k,
+			     setval_t v, int overwrite);
 
 /*
  * Remove mapping for key @k from set @s. Return value associated with
  * removed mapping, or NULL is there was no mapping to delete.
  */
 setval_t osi_cas_skip_remove(gc_global_t *g, osi_set_t * s, setkey_t k);
+setval_t osi_cas_skip_remove_critical(ptst_t *p, osi_set_t * s, setkey_t k);
 
 /*
  * Look up mapping for key @k in set @s. Return value if found, else NULL.
  */
 setval_t osi_cas_skip_lookup(gc_global_t *g, osi_set_t * s, setkey_t k);
+setval_t osi_cas_skip_lookup_critical(ptst_t *p, osi_set_t * s, setkey_t k);
 
 
 /* Hybrid Set/Queue Operations (Matt) */
@@ -169,6 +174,8 @@ setval_t osi_cas_skip_lookup(gc_global_t *g, osi_set_t * s, setkey_t k);
  * on each (undeleted) element visited.  Unordered.
  */
 void osi_cas_skip_for_each(gc_global_t *, osi_set_t * l,
+			   osi_set_each_func each_func, void *arg);
+void osi_cas_skip_for_each_critical(ptst_t *, osi_set_t * l,
 			   osi_set_each_func each_func, void *arg);
 
 
