@@ -189,7 +189,7 @@ do {                                                            \
  * Strong LL/SC operations
  */
 
-static _u32 strong_ll(_u64 *ptr, int p)
+static inline _u32 strong_ll(_u64 *ptr, int p)
 {
     _u64 val_read;
     _u64 new_val;
@@ -209,7 +209,7 @@ static _u32 strong_ll(_u64 *ptr, int p)
 #endif /* !INTEL */
 
 
-static int strong_vl(_u64 *ptr, int p)
+static inline int strong_vl(_u64 *ptr, int p)
 {
     _u64 val_read;
     _u64 flag;
@@ -221,7 +221,7 @@ static int strong_vl(_u64 *ptr, int p)
 }
 
 #if !defined(INTEL) && !defined(X86_64)
-static int strong_sc(_u64 *ptr, int p, _u32 n)
+static inline int strong_sc(_u64 *ptr, int p, _u32 n)
 {
     _u64 val_read;
     _u64 new_val;
@@ -247,7 +247,7 @@ static int strong_sc(_u64 *ptr, int p, _u32 n)
 #endif /* !INTEL */
 
 
-static void s_store(_u64 *ptr, _u32 n)
+static inline void s_store(_u64 *ptr, _u32 n)
 {
     _u64 new_val;
 
@@ -255,7 +255,7 @@ static void s_store(_u64 *ptr, _u32 n)
     *ptr = new_val;
 }
 
-static _u32 s_load(_u64 *ptr)
+static inline _u32 s_load(_u64 *ptr)
 {
     _u64 val_read;
 
@@ -279,12 +279,12 @@ typedef struct {
     qnode_t *tail;
 } mcs_lock_t;
 
-static void mcs_init(mcs_lock_t *lock)
+static inline void mcs_init(mcs_lock_t *lock)
 {
     lock->tail = NULL;
 }
 
-static void mcs_lock(mcs_lock_t *lock, qnode_t *qn)
+static inline void mcs_lock(mcs_lock_t *lock, qnode_t *qn)
 {
     qnode_t *pred;
 
@@ -302,7 +302,7 @@ static void mcs_lock(mcs_lock_t *lock, qnode_t *qn)
     MB();
 }
 
-static void mcs_unlock(mcs_lock_t *lock, qnode_t *qn)
+static inline void mcs_unlock(mcs_lock_t *lock, qnode_t *qn)
 {
     qnode_t *t = qn->next;
 
@@ -347,12 +347,12 @@ typedef struct {
 
 #define CLEAR_BLOCKED(_qn) ADD_TO((_qn)->state, -ST_BLOCKED)
 
-static void mrsw_init(mrsw_lock_t *lock)
+static inline void mrsw_init(mrsw_lock_t *lock)
 {
     memset(lock, 0, sizeof(*lock));
 }
 
-static void rd_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
+static inline void rd_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
 {
     mrsw_qnode_t *pred, *next;
 
@@ -399,7 +399,7 @@ static void rd_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     RMB();
 }
 
-static void rd_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
+static inline void rd_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
 {
     mrsw_qnode_t *next = qn->next;
     int c, oc;
@@ -436,7 +436,7 @@ static void rd_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     }
 }
 
-static void wr_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
+static inline void wr_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
 {
     mrsw_qnode_t *pred;
     int os, s;
@@ -474,7 +474,7 @@ static void wr_lock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
     MB();
 }
 
-static void wr_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
+static inline void wr_unlock(mrsw_lock_t *lock, mrsw_qnode_t *qn)
 {
     mrsw_qnode_t *next = qn->next;
 
